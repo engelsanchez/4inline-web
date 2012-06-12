@@ -1,0 +1,32 @@
+.c4board {
+	background-color:blue;
+	width:506px;
+	height:432px;
+	margin: 0 auto;
+	padding: 15px;
+}
+#c4drops {
+	width:506px;
+	height:20px;
+	margin: 0 auto;
+	padding: 15px;
+}
+div.c4drop {
+	float:left;
+	width:64px;
+	text-align: center;
+	padding: 4px;
+}
+.c4row {
+	clear: both;
+	height:64px;
+	margin: 0 auto
+}
+.c4cell {
+	float:left;
+	height:64px;
+	padding:4px;
+}
+.c4cellimg {
+	width:64px;
+}

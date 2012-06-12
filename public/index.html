@@ -1,0 +1,41 @@
+<!DOCTYPE html> 
+<html> 
+	<head> 
+	<title>My Page</title> 
+	<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+	<!--
+	<meta name="viewport" content="width=device-width, initial-scale=1"> 
+	<link rel="stylesheet" href="http://code.jquery.com/mobile/1.1.0/jquery.mobile-1.1.0.min.css" />
+	-->
+	<script src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
+	<!-- <script src="http://code.jquery.com/mobile/1.1.0/jquery.mobile-1.1.0.min.js"></script> -->
+	<script src="javascripts/c4.js"></script>
+	<link rel="stylesheet" href="stylesheets/c4.css" />
+	<script type="text/javascript">
+	$(function(){
+		C4.init({
+			board : $("#c4board"),
+		});
+		C4.connect("localhost:8080/websocket");
+	});
+	</script>
+</head>
+<body>
+
+<div>
+	<button onclick="C4.join()">Join a Game</button>
+</div>
+
+<div class="c4status"></div>
+<div id="c4drops">
+	<div class="c4drop"><button class="c4drop" onclick="C4.play(1)">&darr;</button></div>
+	<div class="c4drop"><button class="c4drop" onclick="C4.play(2)">&darr;</button></div>
+	<div class="c4drop"><button class="c4drop" onclick="C4.play(3)">&darr;</button></div>
+	<div class="c4drop"><button class="c4drop" onclick="C4.play(4)">&darr;</button></div>
+	<div class="c4drop"><button class="c4drop" onclick="C4.play(5)">&darr;</button></div>
+	<div class="c4drop"><button class="c4drop" onclick="C4.play(6)">&darr;</button></div>
+	<div class="c4drop"><button class="c4drop" onclick="C4.play(7)">&darr;</button></div>
+</div>
+<div id="c4board"></div>
+
+</body></html>
