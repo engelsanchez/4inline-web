@@ -62,6 +62,8 @@ var C4 = {
 	statusEl : null,
 	sock : null,
 	board : null,
+	gameId : null,
+	playerId : null,
 	init : function(args){
 		args = args || {};
 		this.statusBar = args.statusBar || $(".c4status");
@@ -69,7 +71,11 @@ var C4 = {
 		this.board.render();
 		this.onmessage = this.cb_idle;
 	},
+	padId : function(n){
+		return ("000000" + n).slice(-6)
+	},
 	connect : function(url) {
+		C4.status("Trying to connect to server");
 		if ("MozWebSocket" in window) {
 			WebSocket = MozWebSocket;
 		}
@@ -87,6 +93,7 @@ var C4 = {
 			ws.onclose = function() {
 				// websocket was closed
 				C4.status("Connection was closed by server");
+				setTimeout(function(){C4.connect(url)}, 5000);
 			}
 			this.sock = ws;
 		} else {
@@ -99,7 +106,7 @@ var C4 = {
 	},
 	send : function(msg, cb) {
 		this.sock.send(msg);
-		this.onmessage = cb;
+		if (cb)	this.onmessage = cb;
 	},
 	onmessage : function(msg) {
 		alert("Unexpected message from server : "+msg);
@@ -107,26 +114,45 @@ var C4 = {
 	unexpected : function(msg) {
 		this.status("Unexpected message from server : "+msg);
 	},
-	join : function() {
+	cb_idle : function(msg) {
+		this.unexpected(msg);
+	},
+	seek : function(gType) {
+		var boardSize = $("input[type='radio'][name='board-size']").val();
+		var gVar = $("input[type='radio'][name='game-variation']").val();
 		if (this.onmessage == this.cb_idle) {
-			this.sock.send("JOIN");
-			this.onmessage = this.cb_join;
+			var cmd = "SEEK "+gType+" "+gVar+" "+boardSize;
+			this.sock.send(cmd);
+			this.onmessage = this.cb_seek;
+			// TODO: Disable the seek button, re-enable on timeout
 		}
 	},
-	cb_join : function(msg) {
-		if ( msg == "JOIN_PENDING" ){
+	cb_seek : function(msg) {
+		if ( msg == "SEEK_PENDING" ){
 			this.status("Waiting for another player");
-			this.onmessage = this.cb_join_wait;
+			this.onmessage = this.cb_seek_wait;
 		} else
-			this.cb_join_wait(msg);
+			this.cb_seek_wait(msg);
 	},
-	cb_join_wait : function(msg) {
-		if (msg == "NEW_GAME_PLAY"){
-			this.status("New game : Your turn!");
-			this.onmessage = this.cb_my_turn;
-		} else if(msg == "NEW_GAME_WAIT"){
-			this.status("New game : Wait for opponent to play");
-			this.onmessage = this.cb_other_turn;
+	cb_seek_wait : function(msg) {
+		alert("cb_seek_wait");
+		var newGame = msg.match(/^NEW_GAME (\d+) (\d+) (STD|POP) ([0-9]+)x([0-9]+) (Y|O) (1|2)$/);
+		if (newGame) {
+			var gameVar = newGame[1];
+			var w = +newGame[2];
+			var h = +newGame[3];
+			C4.gameId = C4.padId(newGame[4]);
+			C4.playerId = C4.padId(newGame[5]);
+			var turn = newGame[6];
+			var color = +newGame[7];
+			if (turn == "Y") {
+				this.status("New game : Your turn!");
+				this.onmessage = this.cb_my_turn;
+			} else {
+				this.status("New game : Wait for opponent to play");
+				this.onmessage = this.cb_other_turn;
+			}
+			$.mobile.changePage($("#game"));
 		} else
 			this.unexpected(msg);
 	},
@@ -139,7 +165,7 @@ var C4 = {
 	play : function(col) {
 		if (this.onmessage == this.cb_my_turn){
 			if (this.board.drop(col,1)) {
-				this.sock.send("PLAY "+col);
+				this.sock.send("PLAY "+C4.gameId+" "+col);
 				this.onmessage = this.cb_play;
 				this.status("Sending move");
 			}
