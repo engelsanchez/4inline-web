@@ -166,20 +166,21 @@ var C4 = {
 	},
 	cb_seek_notifications: function(msg)
 	{
-		var m = msg.match(/^SEEK_ISSUED (\d+) C4 (STD|POP) (\d+)x(\d+)$/);
-		if (m) {
+		if (C4.gameId)
+			return false;
+		
+		var m;
+		if (m = msg.match(/^SEEK_ISSUED (\d+) C4 (STD|POP) (\d+)x(\d+)$/)) {
 			C4.status("Adding seek "+msg);
 			C4.add_seek({variant:m[2],id:+m[1],board_width:+m[3],board_height:+m[4]});
 			return true;
-		} else {
-			m = msg.match(/^SEEK_REMOVED (\d+)$/);
-			if (m) {
-				C4.status("Removing seek : "+msg);
-				C4.remove_seek(+m[1]);
-				return true;
-			} else 
-				return false;
 		} 
+		if(m = msg.match(/^SEEK_REMOVED (\d+)$/)) {
+			C4.status("Removing seek : "+msg);
+			C4.remove_seek(+m[1]);
+			return true;
+		} 
+		return false;
 	},
 	seek : function(gType) 
 	{
@@ -261,29 +262,29 @@ var C4 = {
 			var gameId = newGame[1];
 			C4.gameId = C4.padId(gameId);
 			C4.gameVar = newGame[2];
-			var w = +newGame[2];
+			var w = +newGame[3];
 			var h = +newGame[4];
 			C4.turn = newGame[5];
 			C4.status(C4.turn == "Y" ? "New game : Your turn!" : "New game : Wait for opponent to play");
 			C4.color = +newGame[6];
 			C4.otherColor = 3-C4.color;
 			C4.otherConnected = true;
-			C4.remove_handler(C4.cb_seek_notifications);
 			C4.remove_handler(C4.cb_new_game);
 			
 			C4.board = new C4Board({cols:w,rows:h,board:C4.boardEl});
 			C4.board.render();
+			C4.clear_seeks();
 			
-			var re_other_dropped = new RegExp("^OTHER_PLAYED "+C4.gameId+" DROP (\\d)$");
-			var re_other_dropped_won = new RegExp("^OTHER_WON "+C4.gameId+" DROP (\\d)$");
-			var re_other_no_moves = new RegExp("^OTHER_NO_MOVES "+C4.gameId+" DROP (\\d+)$");
-			var re_other_quit = new RegExp("^OTHER_QUIT "+C4.gameId+"$");
-			var re_other_disconnected = new RegExp("^OTHER_DISCONNECTED "+C4.gameId+"$");
-			var re_other_returned = new RegExp("^OTHER_RETURNED "+C4.gameId+"$");
-			var re_you_dropped = new RegExp("^PLAY_OK "+C4.gameId+" DROP (\\d+)$");
-			var re_you_win = new RegExp("^YOU_WIN "+C4.gameId+" DROP (\\d+)$");
-			var re_no_moves = new RegExp("^NO_MOVES "+C4.gameId+" DROP (\\d+)$");
-			var re_invalid_move = new RegExp("^INVALID_MOVE "+C4.gameId+"$");
+			var re_other_dropped = new RegExp("^OTHER_PLAYED "+gameId+" DROP (\\d)$");
+			var re_other_dropped_won = new RegExp("^OTHER_WON "+gameId+" DROP (\\d)$");
+			var re_other_no_moves = new RegExp("^OTHER_NO_MOVES "+gameId+" DROP (\\d+)$");
+			var re_other_quit = new RegExp("^OTHER_QUIT "+gameId+"$");
+			var re_other_disconnected = new RegExp("^OTHER_DISCONNECTED "+gameId+"$");
+			var re_other_returned = new RegExp("^OTHER_RETURNED "+gameId+"$");
+			var re_you_dropped = new RegExp("^PLAY_OK "+gameId+" DROP (\\d+)$");
+			var re_you_win = new RegExp("^YOU_WIN "+gameId+" DROP (\\d+)$");
+			var re_no_moves = new RegExp("^NO_MOVES "+gameId+" DROP (\\d+)$");
+			var re_invalid_move = new RegExp("^INVALID_MOVE "+gameId+"$");
 			
 			var in_game_handler  = function(){}; // init in 2 steps to remove Eclipse warning. argh.
 			in_game_handler = function(msg){
@@ -354,7 +355,7 @@ var C4 = {
 				return false;
 			};
 			C4.add_handler(in_game_handler);
-			$.mobile.changePage($("#game"));
+			$.mobile.changePage($("#game"), {changeHash:false});
 			return true;
 		} else
 			return false;
