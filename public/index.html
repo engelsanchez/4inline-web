@@ -13,9 +13,13 @@
 	$(function(){
 		C4.init({
 			board : $("#c4board"),
-		});
-		C4.connect("localhost:8080/websocket");
+			});
+		C4.connect("4inline.localhost:8080/websocket");
 		$(".post-seek").click(function(){C4.seek("ANON")});
+		$(window).bind("unload", function() {
+			C4.send("QUIT");
+		    return false; 
+		})
 	});
 	</script>
 </head>
@@ -26,10 +30,12 @@
 		<div data-role="content">
 			<div class="c4status"></div>
 			<a href="#game-options" data-role="button">New game</a>
-			<h2>Join a game</h2>
+			<h2>My Seeks</h2>
+			<div class="my-seeks"></div>
+			<h2>Seeks From Others</h2>
 			<!-- List of pending games here -->
-			<button data-icon="arrow-r" data-iconpos="right" >Anonymous 7x6</button>
-			<button data-icon="arrow-r" data-iconpos="right" >Anonymous 8x7</button>
+			<div class="seek-list">
+			</div>
 		</div>
 	</div>
 

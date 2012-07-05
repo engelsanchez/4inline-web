@@ -25,16 +25,16 @@ function C4Board(args){
 				return i;
 			}
 		return 0;
-	}
+	};
 	this.piece = function(col, row){
 		return this.slots[col-1][row-1];
-	}
+	};
 	this.setpiece = function(col, row, val){
 		this.slots[col-1][row-1] = val;
-	}
+	};
 	this.updateCell = function(col, row) {
 		$("#c4cellimg_"+col+"_"+row, this.el).attr("src", this.pieceImg[this.piece(col, row)]);			
-	}
+	};
 	this.render = function() {
 		var board = $("<div/>").addClass("c4board");
 		for(var r=this.nrows;r > 0;--r){
@@ -55,7 +55,7 @@ function C4Board(args){
 			board.append(row);
 		}
 		this.el.append(board);	
-	}
+	};
 }
 
 var C4 = {
@@ -64,18 +64,21 @@ var C4 = {
 	board : null,
 	gameId : null,
 	playerId : null,
-	init : function(args){
+	handlers : [],
+	init : function(args)
+	{
 		args = args || {};
 		this.statusBar = args.statusBar || $(".c4status");
 		this.board = new C4Board(args);
 		this.board.render();
-		this.onmessage = this.cb_idle;
 	},
-	padId : function(n){
-		return ("000000" + n).slice(-6)
+	padId : function(n)
+	{
+		return ("000000" + n).slice(-6);
 	},
-	connect : function(url) {
-		C4.status("Trying to connect to server");
+	connect : function(url) 
+	{
+		C4.status("Trying to connect to server "+url);
 		if ("MozWebSocket" in window) {
 			WebSocket = MozWebSocket;
 		}
@@ -85,66 +88,173 @@ var C4 = {
 			ws.onopen = function() {
 				// websocket is connected
 				C4.status("Connected to server");
+				if (C4.playerId) 
+					C4.send("CONNECT AS "+C4.playerId);
+				else	
+					C4.send("CONNECT");
+				C4.add_handler(C4.cb_welcome);
 			};
 			ws.onmessage = function (evt) {
 				var receivedMsg = evt.data;
 				C4.onmessage(receivedMsg);
 			};
 			ws.onclose = function() {
-				// websocket was closed
+				// websocket was closed, try to reconnect in a bit.
 				C4.status("Connection was closed by server");
-				setTimeout(function(){C4.connect(url)}, 5000);
-			}
+				C4.clear_seeks();
+				setTimeout(function(){C4.connect(url);}, 5000);
+			};
 			this.sock = ws;
 		} else {
 			// browser does not support websockets
 			this.status("sorry, your browser does not support websockets.");
 		}
 	},
-	status : function(msg) {
+	status : function(msg) 
+	{
+		//alert(msg);
 		this.statusBar.text(msg);
 	},
-	send : function(msg, cb) {
+	send : function(msg, cb) 
+	{
 		this.sock.send(msg);
 		if (cb)	this.onmessage = cb;
 	},
-	onmessage : function(msg) {
-		alert("Unexpected message from server : "+msg);
+	onmessage : function(msg) 
+	{
+		for(var i=0;i<C4.handlers.length;++i){
+			if(C4.handlers[i](msg))
+				return;
+		}
+		C4.status("Unexpected message : "+msg);
 	},
-	unexpected : function(msg) {
-		this.status("Unexpected message from server : "+msg);
+	add_handler : function(fn)
+	{
+		C4.remove_handler(fn);
+		C4.handlers.push(fn);
 	},
-	cb_idle : function(msg) {
-		this.unexpected(msg);
-	},
-	seek : function(gType) {
-		var boardSize = $("input[type='radio'][name='board-size']").val();
-		var gVar = $("input[type='radio'][name='game-variation']").val();
-		if (this.onmessage == this.cb_idle) {
-			var cmd = "SEEK "+gType+" "+gVar+" "+boardSize;
-			this.sock.send(cmd);
-			this.onmessage = this.cb_seek;
-			// TODO: Disable the seek button, re-enable on timeout
+	remove_handler : function(fn)
+	{
+		for(var i=0;i<C4.handlers.length;++i){
+			if( fn === C4.handlers[i] )
+				C4.handlers.splice(i,1);
 		}
 	},
-	cb_seek : function(msg) {
-		if ( msg == "SEEK_PENDING" ){
-			this.status("Waiting for another player");
-			this.onmessage = this.cb_seek_wait;
+	cb_welcome : function(msg) 
+	{
+		var welcome = msg.match(/^WELCOME (.+)$/);
+		if (welcome) {
+			C4.playerId = welcome[1];	
+			//C4.status("We are player "+C4.playerId);
+			C4.remove_handler(C4.cb_welcome);
+			C4.add_handler(C4.cb_seek_notifications);
+			return true;
 		} else
-			this.cb_seek_wait(msg);
+			return false;
 	},
-	cb_seek_wait : function(msg) {
-		alert("cb_seek_wait");
-		var newGame = msg.match(/^NEW_GAME (\d+) (\d+) (STD|POP) ([0-9]+)x([0-9]+) (Y|O) (1|2)$/);
+	cb_seek_notifications: function(msg)
+	{
+		var m = msg.match(/^SEEK_ISSUED (\d+) C4 (STD|POP) (\d+)x(\d+)$/);
+		if (m) {
+			C4.status("Adding seek "+msg);
+			C4.add_seek({variant:m[2],id:+m[1],board_width:+m[3],board_height:+m[4]});
+			return true;
+		} else {
+			m = msg.match(/^SEEK_REMOVED (\d+)$/);
+			if (m) {
+				C4.status("Removing seek : "+msg);
+				C4.remove_seek(+m[1]);
+				return true;
+			} else 
+				return false;
+		} 
+	},
+	seek : function(gType) 
+	{
+		var boardSize = $("input[type='radio'][name='board-size']:checked").val();
+		var gVar = $("input[type='radio'][name='game-variation']:checked").val();
+		var cmd = "SEEK "+gType+" C4 "+gVar+" "+boardSize;
+		C4.status(cmd);
+		C4.sock.send(cmd);
+		C4.add_handler(C4.cb_seek_reply);
+		C4.add_handler(C4.cb_new_game);
+		$.mobile.changePage($("#main"));
+		// TODO: Disable the seek button, re-enable on timeout
+	},
+	add_my_seek: function(seek)
+	{
+		var seekBtn = $("<button>")
+			.attr("id", "seek_"+seek.id)
+			.addClass("seek")
+			.data("icon", "delete")
+			.data("iconpos", "right")
+			.data("seekid", seek.id)
+			.text(seek.variant+" "+seek.board_width+"x"+seek.board_height)
+			.click(function(){
+				var el = $(this);
+				var seekid = el.data("seekid");
+				C4.send("CANCEL_SEEK "+C4.padId(seekid));
+				C4.add_handler(C4.cb_cancel_seek);
+			});
+		$(".my-seeks").append(seekBtn).trigger("create");
+	},
+	add_seek: function(seek)
+	{
+		var seekBtn = $("<button>")
+			.attr("id", "seek_"+seek.id)
+			.addClass("seek")
+			.data("icon", "arrow-r")
+			.data("iconpos", "right")
+			.data("seekid", seek.id)
+			.text(seek.variant+" "+seek.board_width+"x"+seek.board_height)
+			.click(function(){
+				var el = $(this);
+				var seekid = el.data("seekid");
+				C4.send("ACCEPT_SEEK "+C4.padId(seekid));
+				C4.add_handler(C4.cb_new_game);
+			});
+		$(".seek-list").append(seekBtn).trigger("create");
+	},
+	remove_seek: function(seekid){
+		$(".seek-list > div").has("button[id=seek_"+seekid+"]").remove();
+	},
+	remove_my_seek: function(seekid){
+		$(".my-seeks > div").has("button[id=seek_"+seekid+"]").remove();
+	},
+	clear_seeks: function() {
+		$(".seek-list, .my-seeks").empty();
+	},
+	cb_seek_reply : function(msg) {
+		var m = msg.match(/^SEEK_PENDING (\d+) C4 (STD|POP) (\d+)x(\d+)$/);
+		var matched = false;
+		if (m){
+			var seek = {id:+m[1],variant:m[2],board_width:+m[3],board_height:+m[4]};
+			C4.add_my_seek(seek);
+			C4.status("Waiting for another player");
+			matched = true;
+		} else {
+			m = msg.match(/^DUPLICATE_SEEK (\d+)$/);
+			if (m) 
+				matched = true;
+		}
+		if (matched) {
+			C4.remove_handler(C4.cb_seek_reply);
+			return true;
+		} else
+			return false;
+	},
+	cb_new_game: function(msg) {
+		var newGame = msg.match(/^GAME (\d+) C4 (STD|POP) ([0-9]+)x([0-9]+) (Y|O) (1|2) NEW$/);
 		if (newGame) {
-			var gameVar = newGame[1];
-			var w = +newGame[2];
-			var h = +newGame[3];
+			//var gameVar = newGame[1];
+			//var w = +newGame[2];
+			//var h = +newGame[3];
 			C4.gameId = C4.padId(newGame[4]);
 			C4.playerId = C4.padId(newGame[5]);
+			C4.remove_handler(C4.cb_seek_pending);
+			C4.remove_handler(C4.cb_new_game);
 			var turn = newGame[6];
-			var color = +newGame[7];
+			//var color = +newGame[7];
 			if (turn == "Y") {
 				this.status("New game : Your turn!");
 				this.onmessage = this.cb_my_turn;
@@ -153,14 +263,27 @@ var C4 = {
 				this.onmessage = this.cb_other_turn;
 			}
 			$.mobile.changePage($("#game"));
+			return true;
 		} else
-			this.unexpected(msg);
+			return false;
 	},
-	cancel_join : function() {
-		this.sock.send("CANCEL_JOIN");
-		this.onmessage = this.cb_cancel_join;
-	},
-	cb_cancel_join : function(msg) {
+	cb_cancel_seek: function(msg) {
+		var m;
+		var found = false;
+		if(m = msg.match(/^SEEK_CANCELED (\d+)$/)){
+			C4.status(msg);
+			var seekId = +m[1];
+			C4.remove_my_seek(seekId);
+			found = true;
+		} else if(msg.match(/^NO_SEEK_FOUND (\d+)$/)){
+			C4.status(msg);
+			found =  true;
+		};
+		// TODO: Resolve race condition with quick multiple seek cancelation, maybe multiple handlers
+		// In the future protocol will match by unique command id.
+		if (found)
+			C4.remove_handler(C4.cb_cancel_seek);
+		return found;
 	},
 	play : function(col) {
 		if (this.onmessage == this.cb_my_turn){
@@ -206,4 +329,4 @@ var C4 = {
 			this.unexpected(msg); 
 	}
 	
-}
+};
