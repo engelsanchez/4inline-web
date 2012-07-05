@@ -54,23 +54,35 @@ function C4Board(args){
 				);
 			board.append(row);
 		}
-		this.el.append(board);	
+		this.el.empty().append(board);	
 	};
 }
 
 var C4 = {
+	// Element or jQuery selection to display status message
 	statusEl : null,
+	boardEl : null,
+	// Our web socket thingie
 	sock : null,
-	board : null,
-	gameId : null,
+	// ID given to us by the server to use when reconnecting.
 	playerId : null,
+	// Msg handler list.
 	handlers : [],
+	
+	// Game variables. Later we may support multiple games, for now game vars here.
+	gameId : null,
+	gameVar : null,
+	color : null,
+	otherColor : null,
+	otherConnected : null,
+	turn : null,
+	board : null,
+	
 	init : function(args)
 	{
 		args = args || {};
-		this.statusBar = args.statusBar || $(".c4status");
-		this.board = new C4Board(args);
-		this.board.render();
+		this.statusEl = args.statusBar || $(".c4status");
+		this.boardEl = args.board || $("#c4board");
 	},
 	padId : function(n)
 	{
@@ -113,7 +125,7 @@ var C4 = {
 	status : function(msg) 
 	{
 		//alert(msg);
-		this.statusBar.text(msg);
+		this.statusEl.text(msg);
 	},
 	send : function(msg, cb) 
 	{
@@ -244,24 +256,104 @@ var C4 = {
 			return false;
 	},
 	cb_new_game: function(msg) {
-		var newGame = msg.match(/^GAME (\d+) C4 (STD|POP) ([0-9]+)x([0-9]+) (Y|O) (1|2) NEW$/);
+		var newGame = msg.match(/^GAME (\d+) C4 (STD|POP) (\d+)x(\d+) (Y|O) (1|2) NEW$/);
 		if (newGame) {
-			//var gameVar = newGame[1];
-			//var w = +newGame[2];
-			//var h = +newGame[3];
-			C4.gameId = C4.padId(newGame[4]);
-			C4.playerId = C4.padId(newGame[5]);
-			C4.remove_handler(C4.cb_seek_pending);
+			var gameId = newGame[1];
+			C4.gameId = C4.padId(gameId);
+			C4.gameVar = newGame[2];
+			var w = +newGame[2];
+			var h = +newGame[4];
+			C4.turn = newGame[5];
+			C4.status(C4.turn == "Y" ? "New game : Your turn!" : "New game : Wait for opponent to play");
+			C4.color = +newGame[6];
+			C4.otherColor = 3-C4.color;
+			C4.otherConnected = true;
+			C4.remove_handler(C4.cb_seek_notifications);
 			C4.remove_handler(C4.cb_new_game);
-			var turn = newGame[6];
-			//var color = +newGame[7];
-			if (turn == "Y") {
-				this.status("New game : Your turn!");
-				this.onmessage = this.cb_my_turn;
-			} else {
-				this.status("New game : Wait for opponent to play");
-				this.onmessage = this.cb_other_turn;
-			}
+			
+			C4.board = new C4Board({cols:w,rows:h,board:C4.boardEl});
+			C4.board.render();
+			
+			var re_other_dropped = new RegExp("^OTHER_PLAYED "+C4.gameId+" DROP (\\d)$");
+			var re_other_dropped_won = new RegExp("^OTHER_WON "+C4.gameId+" DROP (\\d)$");
+			var re_other_no_moves = new RegExp("^OTHER_NO_MOVES "+C4.gameId+" DROP (\\d+)$");
+			var re_other_quit = new RegExp("^OTHER_QUIT "+C4.gameId+"$");
+			var re_other_disconnected = new RegExp("^OTHER_DISCONNECTED "+C4.gameId+"$");
+			var re_other_returned = new RegExp("^OTHER_RETURNED "+C4.gameId+"$");
+			var re_you_dropped = new RegExp("^PLAY_OK "+C4.gameId+" DROP (\\d+)$");
+			var re_you_win = new RegExp("^YOU_WIN "+C4.gameId+" DROP (\\d+)$");
+			var re_no_moves = new RegExp("^NO_MOVES "+C4.gameId+" DROP (\\d+)$");
+			var re_invalid_move = new RegExp("^INVALID_MOVE "+C4.gameId+"$");
+			
+			var in_game_handler  = function(){}; // init in 2 steps to remove Eclipse warning. argh.
+			in_game_handler = function(msg){
+				var m;
+				if (m = msg.match(re_you_dropped)) {
+					var col = +m[1];
+					C4.board.drop(col,C4.color);
+					C4.turn = "O";
+					return true;
+				}
+				if (m = msg.match(re_you_win)) {
+					var col = +m[1];
+					C4.board.drop(col,C4.color);
+					C4.gameId = null;
+					C4.status("You win!!");
+					return true;
+				}
+				if (m = msg.match(re_no_moves)) {
+					var col = +m[1];
+					C4.board.drop(col,C4.color);
+					C4.gameId = null;
+					C4.status("No more moves, game over");
+					return true;
+				}
+				if (m = msg.match(re_other_dropped)) {
+					var col = +m[1];
+					C4.board.drop(col, C4.otherColor);
+					C4.status("Your turn");
+					C4.turn = "Y";
+					return true;
+				}
+				if (m = msg.match(re_other_dropped_won)) { 
+					var col = +m[1];
+					C4.board.drop(col, C4.otherColor);
+					C4.status("Sorry, you have lost");
+					C4.remove_handler(in_game_handler);
+					C4.turn = "Y";
+					return true;
+				}
+				if (m = msg.match(re_other_no_moves)) {
+					var col = +m[1];
+					C4.board.drop(col,C4.otherColor);
+					C4.gameId = null;
+					C4.status("No more moves, game over");
+					return true;
+				}
+				if (m = msg.match(re_other_quit)) {
+					C4.status("Your opponent quit the game");
+					C4.remove_handler(in_game_handler);
+					C4.gameId = null;
+					C4.turn = null;
+					return true;
+				}
+				if (m = msg.match(re_other_disconnected)) {
+					C4.status("Other player disconnected, waiting for reconnection");
+					C4.otherConnected = false;
+					return true;
+				}
+				if (m = msg.match(re_other_returned)) {
+					C4.status("Other player returned!");
+					C4.otherConnected = true;
+					return true;
+				}
+				if (m = msg.match(re_invalid_move)) {
+					C4.status("Invalid move");
+					return true;
+				}
+				return false;
+			};
+			C4.add_handler(in_game_handler);
 			$.mobile.changePage($("#game"));
 			return true;
 		} else
@@ -285,48 +377,13 @@ var C4 = {
 			C4.remove_handler(C4.cb_cancel_seek);
 		return found;
 	},
+	canPlay : function() {
+		return C4.gameId && C4.otherConnected && C4.turn == "Y";
+	},
 	play : function(col) {
-		if (this.onmessage == this.cb_my_turn){
-			if (this.board.drop(col,1)) {
-				this.sock.send("PLAY "+C4.gameId+" "+col);
-				this.onmessage = this.cb_play;
-				this.status("Sending move");
-			}
+		if (C4.canPlay()){
+			C4.sock.send("PLAY "+C4.gameId+" DROP "+col);
+			C4.status("Sending move");
 		}
-	},
-	cb_play : function(msg) {
-		if (msg == "PLAY_OK" ){
-			this.status("Waiting for other player");	
-			this.onmessage = this.cb_other_turn;
-		} else if(msg == "YOU_WIN" ){
-			this.status("You win!!");
-			this.onmessage = this.cb_idle;
-		} else 
-			this.unexpected(msg);
-	},
-	cb_other_turn: function(msg){
-		// OTHER_PLAY N, OTHER_WON
-		var won = msg.match(/^OTHER_WON ([1-9])$/);
-		var played = msg.match(/^OTHER_PLAYED ([1-9])$/); 
-		if (won){
-			var col = +won[1];
-			this.board.drop(col, 2);
-			this.status("You lose!!");
-			this.onmessage = this.cb_idle;
-		} else if(played) { 
-			var col = +played[1];
-			this.board.drop(col, 2);
-			this.status("Your turn");
-			this.onmessage = this.cb_my_turn;
-		} else
-			this.unexpected(msg); 
-	},
-	cb_my_turn : function(msg){
-		if (msg.match(/^OTHER_QUIT^/)){
-			this.status("Other player quit");
-			this.onmessage = this.cb_idle;
-		} else
-			this.unexpected(msg); 
 	}
-	
 };
