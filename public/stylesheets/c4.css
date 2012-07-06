@@ -12,7 +12,26 @@ button.c4drop{text-align:center}
 .c4cellimg.piece1 {background-image:url(../images/piece1_medium.png);}
 .c4cellimg.piece2 {background-image:url(../images/piece2_medium.png);}
 
-div.c4drop .ui-btn-inner{padding:9px 0}
+div.c4drop .ui-btn-inner{padding-left:0;padding-right:0}
+
+/* 8x7 board 520 - 2x8 = 504 = 8x63 = 8 x (55 + 2x4) */
+.board8x7 .c4board { padding: 8px}
+.board8x7 .c4cell, .board8x7 div.c4drop, .board8x7 .c4cellimg { width:55px}
+.board8x7 .c4cell, .board8x7 .c4cellimg {height:55px}
+.board8x7 #c4drops,.board8x7 .c4cell,.board8x7 div.c4drop{padding: 4px}
+
+/* 9x7 board 520 - 2x8 = 504 = 9x56 = 9x(52+2x2) */
+.board9x7 .c4board { padding: 8px}
+.board9x7 .c4cell, .board9x7 div.c4drop, .board9x7 .c4cellimg { width:52px}
+.board9x7 .c4cell, .board9x7 .c4cellimg {height:52px}
+.board9x7 #c4drops,.board9x7 .c4cell,.board9x7 div.c4drop{padding: 2px}
+
+/* 10x7 board 520 - 2x5 = 510 = 10x51 = 8x(47+2x2) */
+.board10x7 .c4board { padding: 5px}
+.board10x7 .c4cell, .board10x7 div.c4drop, .board10x7 .c4cellimg { width:47px}
+.board10x7 .c4cell, .board10x7 .c4cellimg {height:47px}
+.board10x7 #c4drops,.board10x7 .c4cell,.board10x7 div.c4drop{padding: 2px}
+
 
 /* Tiny Layout */
 @media all and (max-width: 450px), all and (max-height:450px) {
@@ -20,11 +39,30 @@ div.c4drop .ui-btn-inner{padding:9px 0}
 #c4drops{padding:1px 4px}
 .c4board { padding:4px }
 .c4cell, div.c4drop, .c4cellimg { width:36px}
- #c4drops, .c4cell, div.c4drop{padding: 2px}
+#c4drops, .c4cell, div.c4drop{padding: 2px}
 .c4cell, .c4cellimg {height:36px}
 .c4cellimg{background-image:url(../images/piece0_small.png)}
 .c4cellimg.piece1{background-image:url(../images/piece1_small.png)}
 .c4cellimg.piece2{background-image:url(../images/piece2_small.png)}
+
+/* 8x7 board 288-2x4 = 280  = 8x35 = 8 x (31 + 2x2) */
+.board8x7 .c4board {padding:4px}
+.board8x7 .c4cell, .board8x7 div.c4drop, .board8x7 .c4cellimg { width:31px}
+.board8x7 .c4cell, .board8x7 .c4cellimg {height:31px}
+.board8x7 #c4drops,.board8x7 .c4cell,.board8x7 div.c4drop{padding: 2px}
+
+/* 9x7 board 288-2x4.5 = 279 = 9x31 = 9x(29+2x1) */
+.board9x7 .c4board {padding:4.5px}
+.board9x7 .c4cell, .board9x7 div.c4drop, .board9x7 .c4cellimg { width:29px}
+.board9x7 .c4cell, .board9x7 .c4cellimg {height:29px}
+.board9x7 #c4drops,.board9x7 .c4cell,.board9x7 div.c4drop{padding: 1px}
+
+/* 10x7 board 288-2x4 = 280  = 10x28 = 10x(26+2x1) */
+.board10x7 .c4board {padding:4px}
+.board10x7 .c4cell, .board10x7 div.c4drop, .board10x7 .c4cellimg { width:26px}
+.board10x7 .c4cell, .board10x7 .c4cellimg {height:26px}
+.board10x7 #c4drops,.board10x7 .c4cell,.board10x7 div.c4drop{padding: 1px}
+
 }
 
 /* Small Layout */
@@ -39,6 +77,24 @@ div.c4drop .ui-btn-inner{padding:9px 0}
 .c4cellimg{background-image:url(../images/piece0_small.png)}
 .c4cellimg.piece1 {background-image:url(../images/piece1_small.png)}
 .c4cellimg.piece2 {background-image:url(../images/piece2_small.png)}
+
+/* 8x7 board 440-2x4 = 432 = 8x54 = 8 x (46 + 2x4) */
+.board8x7 .c4board {padding:4px}
+.board8x7 .c4cell, .board8x7 div.c4drop, .board8x7 .c4cellimg { width:46px}
+.board8x7 .c4cell, .board8x7 .c4cellimg {height:46px}
+.board8x7 #c4drops,.board8x7 .c4cell,.board8x7 div.c4drop{padding: 4px}
+
+/* 9x7 board 440-2x4 = 432 = 9x48 = 9x(44+2x2) */
+.board9x7 .c4board {padding:4px}
+.board9x7 .c4cell, .board9x7 div.c4drop, .board9x7 .c4cellimg { width:44px}
+.board9x7 .c4cell, .board9x7 .c4cellimg {height:44px}
+.board9x7 #c4drops,.board9x7 .c4cell,.board9x7 div.c4drop{padding: 2px}
+
+/* 10x7 board 440-2x5 = 430  = 10x43 = 10x(41+2x1) */
+.board10x7 .c4board {padding:5px}
+.board10x7 .c4cell, .board10x7 div.c4drop, .board10x7 .c4cellimg { width:41px}
+.board10x7 .c4cell, .board10x7 .c4cellimg {height:41px}
+.board10x7 #c4drops,.board10x7 .c4cell,.board10x7 div.c4drop{padding: 1px}
 }
 
 /* Large Layout */
@@ -52,5 +108,23 @@ div.c4drop .ui-btn-inner{padding:9px 0}
 .c4cellimg.piece0 {background-image:url(../images/piece0_large.png)}
 .c4cellimg.piece1 {background-image:url(../images/piece1_large.png)}
 .c4cellimg.piece2 {background-image:url(../images/piece2_large.png)}
+
+/* 8x7 board 740-2x10 = 720 = 8x90 = 8x(70+2x10) */
+.board8x7 .c4board {padding:10px}
+.board8x7 .c4cell, .board8x7 div.c4drop, .board8x7 .c4cellimg { width:70px}
+.board8x7 .c4cell, .board8x7 .c4cellimg {height:70px}
+.board8x7 #c4drops,.board8x7 .c4cell,.board8x7 div.c4drop{padding: 10px}
+
+/* 9x7 board 740-2x10 = 720 = 9x80 = 9x(60+2x10) */
+.board9x7 .c4board {padding:10px}
+.board9x7 .c4cell, .board9x7 div.c4drop, .board9x7 .c4cellimg { width:60px}
+.board9x7 .c4cell, .board9x7 .c4cellimg {height:60px}
+.board9x7 #c4drops,.board9x7 .c4cell,.board9x7 div.c4drop{padding: 10px}
+
+/* 10x7 board 740-2x10 = 720  = 10x72 = 10x(52+2x10) */
+.board10x7 .c4board {padding:10px}
+.board10x7 .c4cell, .board10x7 div.c4drop, .board10x7 .c4cellimg { width:52px}
+.board10x7 .c4cell, .board10x7 .c4cellimg {height:52px}
+.board10x7 #c4drops,.board10x7 .c4cell,.board10x7 div.c4drop{padding: 10px}
 }
 
