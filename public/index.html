@@ -1,7 +1,7 @@
 <!DOCTYPE html> 
 <html> 
 	<head> 
-	<title>4 in line</title> 
+	<title>4 in line (Alpha)</title> 
 	<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 	<meta name="viewport" content="width=device-width, initial-scale=1"> 
 	<link rel="stylesheet" href="http://code.jquery.com/mobile/1.1.0/jquery.mobile-1.1.0.min.css" />
@@ -14,7 +14,8 @@
 		C4.init({
 			board : $("#c4holder"),
 			});
-		C4.connect("4inline.localhost:8080/websocket");
+		url = window.location.hostname + ":8080/websocket";
+		C4.connect(url);
 		$(".post-seek").click(function(){C4.seek("ANON")});
 		$(window).bind("unload", function() {
 			C4.send("QUIT");
@@ -24,15 +25,14 @@
 	</script>
 </head>
 <body>
-
 	<div data-role="page" id="main">
-		<div data-role="header"><h1>4-in-line</h1></div>
+		<div data-role="header"><h1>4-in-line (Alpha)</h1></div>
 		<div data-role="content">
 			<div class="c4status"></div>
 			<a href="#game-options" data-role="button">New game</a>
-			<h2>My Seeks</h2>
+			<h2 id="my-seeks-title">No seeks from you</h2>
 			<div class="my-seeks"></div>
-			<h2>Seeks From Others</h2>
+			<h2 id="seeks-title">No seeks from others</h2>
 			<div class="seek-list">
 			</div>
 		</div>
@@ -40,15 +40,12 @@
 
 	<div data-role="page" id="game-options">
 		<div data-role="header">
-			<h1>4-in-line</h1>
+			<h1>Game Options</h1>
 			<a href="#main" data-icon="home" data-iconpos="notext" data-direction="reverse">Home</a>
 		</div>
 		<div data-role="content">
-			<div class="c4status"></div>
-			<h2>Game Options</h2>
 			<div data-role="fieldcontain">
 			<fieldset data-role="controlgroup" data-type="horizontal">
-				<legend>Board Size</legend>
 				<label for="board-size-1">7x6</label>
 				<input type="radio" name="board-size" id="board-size-1" value="07x06" checked="checked"/>
 				<label for="board-size-2">8x7</label>
@@ -59,17 +56,14 @@
 				<input type="radio" name="board-size" id="board-size-4" value="10x07" />
 			</fieldset>
 			</div>
-			<div data-role="fieldcontain">
-			<fieldset data-role="controlgroup" data-type="horizontal">
-				<legend>Variation</legend>
+			<fieldset data-role="controlgroup" data-type="horizontal" style="display:none;visibility:hidden">
 				<label for="game-variation-1">Standard</label>
 				<input type="radio" name="game-variation" id="game-variation-1" value="STD" checked="checked"/>
 				<label for="game-variation-2">Pop Out</label>
-				<input type="radio" name="game-variation" id="game-variation-2" value="POP" />
+				<input type="radio" name="game-variation" id="game-variation-2" value="POP"/>
 			</fieldset>
-			</div>
 			<button class="post-seek">Post</button>
-			<button class="post-priv-seek">Play with a Friend</button>
+			<!--  <button class="post-priv-seek">Play with a Friend</button>  -->
 		</div>
 	</div>
 	<div data-role="page" id="friend-wait">
@@ -87,23 +81,14 @@
 
 	<div data-role="page" id="game">
 		<div data-role="header">
-			<h1>4-in-line</h1>
-			<a href="#main" data-icon="home" data-iconpos="notext" data-direction="reverse">Home</a>
+			<h1>
+			<span id="gameStatus"></span>
+			<span class="you-are">You are <img src="images/piece0_small.png" alt="No color"/></span>
+			</h1>
+			<a id="game-home-btn" href="#main" data-icon="home" data-iconpos="notext" 
+				data-direction="reverse">Home</a>
 		</div>
-		<div class="c4status"></div>
 		<div id="c4holder"></div>
-		<!-- 
-		<div id="c4drops">
-			<div class="c4drop"><button class="c4drop" data-inline="true" onclick="C4.play(1)">&darr;</button></div>
-			<div class="c4drop"><button class="c4drop" onclick="C4.play(2)">&darr;</button></div>
-			<div class="c4drop"><button class="c4drop" onclick="C4.play(3)">&darr;</button></div>
-			<div class="c4drop"><button class="c4drop" onclick="C4.play(4)">&darr;</button></div>
-			<div class="c4drop"><button class="c4drop" onclick="C4.play(5)">&darr;</button></div>
-			<div class="c4drop"><button class="c4drop" onclick="C4.play(6)">&darr;</button></div>
-			<div class="c4drop"><button class="c4drop" onclick="C4.play(7)">&darr;</button></div>
-		</div>
-		<div id="c4board"></div>
- -->
 	</div> <!-- game page -->
 
 </body></html>

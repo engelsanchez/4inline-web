@@ -1,3 +1,13 @@
+.ui-header .ui-title, .ui-footer .ui-title {
+
+margin-left: 0;
+margin-right: 0;
+text-overflow:visible
+}
+
+.you-are {float:right; margin:0 5px}
+.you-are img {width:26px; height: 26px;vertical-align:bottom}
+
 /* Default style for the board */
 .c4area {width:520px; margin: 0 auto}
 .c4board {background-color:blue; padding: 10px;border-radius:25px;border-color:0.5px solid white}

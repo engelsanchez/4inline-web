@@ -82,6 +82,7 @@ function C4Board(args){
 var C4 = {
 	// Element or jQuery selection to display status message
 	statusEl : null,
+	gameStatusEl : null,
 	boardEl : null,
 	// Our web socket thingie
 	sock : null,
@@ -103,7 +104,12 @@ var C4 = {
 	{
 		args = args || {};
 		this.statusEl = args.statusBar || $(".c4status");
+		this.gameStatusEl = args.gameStatus || $("#gameStatus");
 		this.boardEl = args.board || $("#c4board");
+		
+		$("#game-home-btn").click(function(){
+			C4.quit_game();
+		});
 	},
 	padId : function(n)
 	{
@@ -111,7 +117,7 @@ var C4 = {
 	},
 	connect : function(url) 
 	{
-		C4.status("Trying to connect to server "+url);
+		C4.debug("Trying to connect to server "+url);
 		if ("MozWebSocket" in window) {
 			WebSocket = MozWebSocket;
 		}
@@ -120,7 +126,7 @@ var C4 = {
 			var ws = new WebSocket("ws://"+url);
 			ws.onopen = function() {
 				// websocket is connected
-				C4.status("Connected to server");
+				C4.debug("Connected to server");
 				if (C4.playerId) 
 					C4.send("CONNECT AS "+C4.playerId);
 				else	
@@ -133,20 +139,31 @@ var C4 = {
 			};
 			ws.onclose = function() {
 				// websocket was closed, try to reconnect in a bit.
-				C4.status("Connection was closed by server");
+				C4.status("No connection to server");
 				C4.clear_seeks();
 				setTimeout(function(){C4.connect(url);}, 5000);
+			};
+			ws.onerror = function(evt){
+				C4.status("Connection error : "+evt.data);
 			};
 			this.sock = ws;
 		} else {
 			// browser does not support websockets
-			this.status("sorry, your browser does not support websockets.");
+			C4.status("Sorry, your internet browser can not play this game :(");
 		}
 	},
 	status : function(msg) 
 	{
 		//alert(msg);
 		this.statusEl.text(msg);
+	},
+	gameStatus : function(msg)
+	{
+		this.gameStatusEl.text(msg);
+	},
+	debug : function(msg)
+	{
+		//this.status(msg);
 	},
 	send : function(msg, cb) 
 	{
@@ -159,7 +176,7 @@ var C4 = {
 			if(C4.handlers[i](msg))
 				return;
 		}
-		C4.status("Unexpected message : "+msg);
+		C4.debug("Unexpected message : "+msg);
 	},
 	add_handler : function(fn)
 	{
@@ -178,7 +195,7 @@ var C4 = {
 		var welcome = msg.match(/^WELCOME (.+)$/);
 		if (welcome) {
 			C4.playerId = welcome[1];	
-			//C4.status("We are player "+C4.playerId);
+			C4.debug("We are player "+C4.playerId);
 			C4.remove_handler(C4.cb_welcome);
 			C4.add_handler(C4.cb_seek_notifications);
 			$.mobile.changePage($("#main"));
@@ -193,23 +210,28 @@ var C4 = {
 		
 		var m;
 		if (m = msg.match(/^SEEK_ISSUED (\d+) C4 (STD|POP) (\d+)x(\d+)$/)) {
-			C4.status("Adding seek "+msg);
+			C4.debug("Adding seek "+msg);
 			C4.add_seek({variant:m[2],id:+m[1],board_width:+m[3],board_height:+m[4]});
 			return true;
 		} 
 		if(m = msg.match(/^SEEK_REMOVED (\d+)$/)) {
-			C4.status("Removing seek : "+msg);
+			C4.debug("Removing seek : "+msg);
 			C4.remove_seek(+m[1]);
 			return true;
 		} 
 		return false;
+	},
+	quit_game : function() {
+		if(C4.gameId){
+			C4.sock.send("QUIT_GAME "+C4.gameId);
+		}
 	},
 	seek : function(gType) 
 	{
 		var boardSize = $("input[type='radio'][name='board-size']:checked").val();
 		var gVar = $("input[type='radio'][name='game-variation']:checked").val();
 		var cmd = "SEEK "+gType+" C4 "+gVar+" "+boardSize;
-		C4.status(cmd);
+		C4.debug(cmd);
 		C4.sock.send(cmd);
 		C4.add_handler(C4.cb_seek_reply);
 		C4.add_handler(C4.cb_new_game);
@@ -232,6 +254,7 @@ var C4 = {
 				C4.add_handler(C4.cb_cancel_seek);
 			});
 		$(".my-seeks").append(seekBtn).trigger("create");
+		$("#my-seeks-title").text("Your seeks");
 	},
 	add_seek: function(seek)
 	{
@@ -249,15 +272,22 @@ var C4 = {
 				C4.add_handler(C4.cb_new_game);
 			});
 		$(".seek-list").append(seekBtn).trigger("create");
+		$("#seeks-title").text("Seeks from others");
 	},
 	remove_seek: function(seekid){
 		$(".seek-list > div").has("button[id=seek_"+seekid+"]").remove();
+		if ($(".seek-list > div").length == 0)
+			$("#seeks-title").text("No seeks from others");
 	},
 	remove_my_seek: function(seekid){
 		$(".my-seeks > div").has("button[id=seek_"+seekid+"]").remove();
+		if ($(".my-seeks > div").length == 0)
+			$("#my-seeks-title").text("No seeks from you");
 	},
 	clear_seeks: function() {
 		$(".seek-list, .my-seeks").empty();
+		$("#seeks-title").text("No seeks from others");
+		$("#my-seeks-title").text("No seeks from you");
 	},
 	cb_seek_reply : function(msg) {
 		var m = msg.match(/^SEEK_PENDING (\d+) C4 (STD|POP) (\d+)x(\d+)$/);
@@ -265,7 +295,7 @@ var C4 = {
 		if (m){
 			var seek = {id:+m[1],variant:m[2],board_width:+m[3],board_height:+m[4]};
 			C4.add_my_seek(seek);
-			C4.status("Waiting for another player");
+			C4.debug("Waiting for another player");
 			matched = true;
 		} else {
 			m = msg.match(/^DUPLICATE_SEEK (\d+)$/);
@@ -287,18 +317,19 @@ var C4 = {
 			var w = +newGame[3];
 			var h = +newGame[4];
 			C4.turn = newGame[5];
-			C4.status(C4.turn == "Y" ? "New game : Your turn!" : "New game : Wait for opponent to play");
+			C4.gameStatus(C4.turn == "Y" ? "Your move" : "Waiting for move");
 			C4.color = +newGame[6];
 			C4.otherColor = 3-C4.color;
 			C4.otherConnected = true;
 			C4.remove_handler(C4.cb_new_game);
+			$(".you-are img").attr({src: "images/piece"+C4.color+"_small.png"});
 			
 			C4.board = new C4Board({cols:w,rows:h,board:C4.boardEl});
 			C4.board.render();
 			C4.clear_seeks();
 			
-			var re_other_dropped = new RegExp("^OTHER_PLAYED "+gameId+" DROP (\\d)$");
-			var re_other_dropped_won = new RegExp("^OTHER_WON "+gameId+" DROP (\\d)$");
+			var re_other_dropped = new RegExp("^OTHER_PLAYED "+gameId+" DROP (\\d+)$");
+			var re_other_dropped_won = new RegExp("^OTHER_WON "+gameId+" DROP (\\d+)$");
 			var re_other_no_moves = new RegExp("^OTHER_NO_MOVES "+gameId+" DROP (\\d+)$");
 			var re_other_quit = new RegExp("^OTHER_QUIT "+gameId+"$");
 			var re_other_disconnected = new RegExp("^OTHER_DISCONNECTED "+gameId+"$");
@@ -307,13 +338,20 @@ var C4 = {
 			var re_you_win = new RegExp("^YOU_WIN "+gameId+" DROP (\\d+)$");
 			var re_no_moves = new RegExp("^NO_MOVES "+gameId+" DROP (\\d+)$");
 			var re_invalid_move = new RegExp("^INVALID_MOVE "+gameId+"$");
+			var re_leaving_game = new RegExp("^LEAVING_GAME "+gameId+"$");
 			
 			var in_game_handler  = function(){}; // init in 2 steps to remove Eclipse warning. argh.
 			in_game_handler = function(msg){
 				var m;
+				if (msg.match(re_leaving_game)){
+					C4.gameId = null;
+					C4.remove_handler(in_game_handler);
+					return true;
+				}
 				if (m = msg.match(re_you_dropped)) {
 					var col = +m[1];
 					C4.board.drop(col,C4.color);
+					C4.gameStatus("Waiting for move");
 					C4.turn = "O";
 					return true;
 				}
@@ -321,27 +359,27 @@ var C4 = {
 					var col = +m[1];
 					C4.board.drop(col,C4.color);
 					C4.gameId = null;
-					C4.status("You win!!");
+					C4.gameStatus("You won!!");
 					return true;
 				}
 				if (m = msg.match(re_no_moves)) {
 					var col = +m[1];
 					C4.board.drop(col,C4.color);
 					C4.gameId = null;
-					C4.status("No more moves, game over");
+					C4.gameStatus("No more moves");
 					return true;
 				}
 				if (m = msg.match(re_other_dropped)) {
 					var col = +m[1];
 					C4.board.drop(col, C4.otherColor);
-					C4.status("Your turn");
+					C4.gameStatus("Your move");
 					C4.turn = "Y";
 					return true;
 				}
 				if (m = msg.match(re_other_dropped_won)) { 
 					var col = +m[1];
 					C4.board.drop(col, C4.otherColor);
-					C4.status("Sorry, you have lost");
+					C4.gameStatus("You have lost");
 					C4.remove_handler(in_game_handler);
 					C4.turn = "Y";
 					return true;
@@ -350,23 +388,23 @@ var C4 = {
 					var col = +m[1];
 					C4.board.drop(col,C4.otherColor);
 					C4.gameId = null;
-					C4.status("No more moves, game over");
+					C4.gameStatus("No more moves");
 					return true;
 				}
 				if (m = msg.match(re_other_quit)) {
-					C4.status("Your opponent quit the game");
+					C4.gameStatus("Other player quit");
 					C4.remove_handler(in_game_handler);
 					C4.gameId = null;
 					C4.turn = null;
 					return true;
 				}
 				if (m = msg.match(re_other_disconnected)) {
-					C4.status("Other player disconnected, waiting for reconnection");
+					C4.status("Waiting : Other disconnected");
 					C4.otherConnected = false;
 					return true;
 				}
 				if (m = msg.match(re_other_returned)) {
-					C4.status("Other player returned!");
+					C4.gameStatus(C4.turn == "Y" ? "Your move" : "Waiting for move");
 					C4.otherConnected = true;
 					return true;
 				}
@@ -386,12 +424,12 @@ var C4 = {
 		var m;
 		var found = false;
 		if(m = msg.match(/^SEEK_CANCELED (\d+)$/)){
-			C4.status(msg);
+			C4.debug(msg);
 			var seekId = +m[1];
 			C4.remove_my_seek(seekId);
 			found = true;
 		} else if(msg.match(/^NO_SEEK_FOUND (\d+)$/)){
-			C4.status(msg);
+			C4.debug(msg);
 			found =  true;
 		};
 		// TODO: Resolve race condition with quick multiple seek cancelation, maybe multiple handlers
@@ -406,7 +444,7 @@ var C4 = {
 	play : function(col) {
 		if (C4.canPlay()){
 			C4.sock.send("PLAY "+C4.gameId+" DROP "+col);
-			C4.status("Sending move");
+			C4.debug("Sending move");
 		}
 	}
 };
