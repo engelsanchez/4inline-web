@@ -12,7 +12,7 @@
 	<script type="text/javascript">
 	$(function(){
 		C4.init({
-			board : $("#c4board"),
+			board : $("#c4holder"),
 			});
 		C4.connect("4inline.localhost:8080/websocket");
 		$(".post-seek").click(function(){C4.seek("ANON")});
@@ -33,7 +33,6 @@
 			<h2>My Seeks</h2>
 			<div class="my-seeks"></div>
 			<h2>Seeks From Others</h2>
-			<!-- List of pending games here -->
 			<div class="seek-list">
 			</div>
 		</div>
@@ -92,6 +91,8 @@
 			<a href="#main" data-icon="home" data-iconpos="notext" data-direction="reverse">Home</a>
 		</div>
 		<div class="c4status"></div>
+		<div id="c4holder"></div>
+		<!-- 
 		<div id="c4drops">
 			<div class="c4drop"><button class="c4drop" data-inline="true" onclick="C4.play(1)">&darr;</button></div>
 			<div class="c4drop"><button class="c4drop" onclick="C4.play(2)">&darr;</button></div>
@@ -102,7 +103,7 @@
 			<div class="c4drop"><button class="c4drop" onclick="C4.play(7)">&darr;</button></div>
 		</div>
 		<div id="c4board"></div>
-
+ -->
 	</div> <!-- game page -->
 
 </body></html>

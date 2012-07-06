@@ -1,32 +1,56 @@
-.c4board {
-	background-color:blue;
-	width:506px;
-	height:432px;
-	margin: 0 auto;
-	padding: 15px;
+/* Default style for the board */
+.c4area {width:520px; margin: 0 auto}
+.c4board {background-color:blue; padding: 10px;border-radius:25px;border-color:0.5px solid white}
+#c4drops {padding: 3px 15px}
+div.c4drop {float:left;text-align: center;width:70px}
+button.c4drop{text-align:center}
+.lastdrop{clear:both;height:0px;visibility:hidden}
+.c4row {clear: both}
+.c4cell {float:left;padding: 6px;width:58px}
+.c4cellimg {width:58px;height:58px;background-size:cover}
+.c4cellimg {background-image:url(../images/piece0_medium.png);}
+.c4cellimg.piece1 {background-image:url(../images/piece1_medium.png);}
+.c4cellimg.piece2 {background-image:url(../images/piece2_medium.png);}
+
+div.c4drop .ui-btn-inner{padding:9px 0}
+
+/* Tiny Layout */
+@media all and (max-width: 450px), all and (max-height:450px) {
+.c4area{width:288px}
+#c4drops{padding:1px 4px}
+.c4board { padding:4px }
+.c4cell, div.c4drop, .c4cellimg { width:36px}
+ #c4drops, .c4cell, div.c4drop{padding: 2px}
+.c4cell, .c4cellimg {height:36px}
+.c4cellimg{background-image:url(../images/piece0_small.png)}
+.c4cellimg.piece1{background-image:url(../images/piece1_small.png)}
+.c4cellimg.piece2{background-image:url(../images/piece2_small.png)}
 }
-#c4drops {
-	width:506px;
-	height:20px;
-	margin: 0 auto;
-	padding: 15px;
+
+/* Small Layout */
+@media  all and (min-width: 451px) and (min-height:451px) and (max-width: 540px), 
+	all and (min-width: 451px) and (min-height:451px) and (max-height:540px) {
+.c4area{width:440px}
+#c4drops{padding:2px 4px}
+.c4board { padding:10px }
+.c4cell, div.c4drop, .c4cellimg { width:48px}
+ #c4drops, .c4cell, div.c4drop{padding: 6px}
+.c4cell, .c4cellimg {height:48px}
+.c4cellimg{background-image:url(../images/piece0_small.png)}
+.c4cellimg.piece1 {background-image:url(../images/piece1_small.png)}
+.c4cellimg.piece2 {background-image:url(../images/piece2_small.png)}
 }
-div.c4drop {
-	float:left;
-	width:64px;
-	text-align: center;
-	padding: 4px;
+
+/* Large Layout */
+@media all and (min-width:751px) and (min-height: 751px) {
+.c4area{width:740px}
+#c4drops{padding:4px 20px}
+.c4board { padding:20px }
+.c4cell, div.c4drop, .c4cellimg { width:80px}
+ #c4drops, .c4cell, div.c4drop{padding:10px}
+.c4cell, .c4cellimg {height:80px}
+.c4cellimg.piece0 {background-image:url(../images/piece0_large.png)}
+.c4cellimg.piece1 {background-image:url(../images/piece1_large.png)}
+.c4cellimg.piece2 {background-image:url(../images/piece2_large.png)}
 }
-.c4row {
-	clear: both;
-	height:64px;
-	margin: 0 auto
-}
-.c4cell {
-	float:left;
-	height:64px;
-	padding:4px;
-}
-.c4cellimg {
-	width:64px;
-}
+

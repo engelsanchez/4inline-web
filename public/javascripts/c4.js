@@ -33,28 +33,49 @@ function C4Board(args){
 		this.slots[col-1][row-1] = val;
 	};
 	this.updateCell = function(col, row) {
-		$("#c4cellimg_"+col+"_"+row, this.el).attr("src", this.pieceImg[this.piece(col, row)]);			
+		$("#c4cellimg_"+col+"_"+row, this.el)
+		.addClass("piece"+this.piece(col, row));			
 	};
 	this.render = function() {
+		this.el.empty();
+		var dropBtns = $("<div/>")
+		.attr("id", "c4drops");
+		var clickHandler = function(n){
+			return function(){C4.play(n);};
+		};
+		for(var i=1;i<=this.ncols;++i){
+			dropBtns.append(
+					$("<div>")
+					.addClass("c4drop")
+					.append(
+							$("<button>")
+							.addClass("c4drop")
+							.html("&darr;")
+							.click(clickHandler(i))
+							)
+					);
+		}
+		dropBtns.append($("<div/>").addClass("lastdrop"));
+		// now the board itself
 		var board = $("<div/>").addClass("c4board");
 		for(var r=this.nrows;r > 0;--r){
 			var row = $("<div/>").addClass("c4row");
-			for(var c=1;c<=this.ncols;++c)
+			for(var c=1;c<=this.ncols;++c){
 				row.append(
 					$("<div/>")
 					.addClass("c4cell")
 					.append(
-						$("<img/>")
+						$("<div/>")
 						.addClass("c4cellimg")
-						.attr({
-							id: "c4cellimg_"+c+"_"+r, 
-							src: this.pieceImg[0]
-						})
+						.attr("id", "c4cellimg_"+c+"_"+r) 
 					)
 				);
+			}
+			row.append($("<div/>").addClass("lastdrop"));
 			board.append(row);
 		}
-		this.el.empty().append(board);	
+		var area = $("<div/>").addClass("c4area").addClass("board"+this.ncols+"x"+this.nrows).append(dropBtns).append(board);
+		this.el.append(area).trigger("create");	
 	};
 }
 
@@ -160,6 +181,7 @@ var C4 = {
 			//C4.status("We are player "+C4.playerId);
 			C4.remove_handler(C4.cb_welcome);
 			C4.add_handler(C4.cb_seek_notifications);
+			$.mobile.changePage($("#main"));
 			return true;
 		} else
 			return false;
