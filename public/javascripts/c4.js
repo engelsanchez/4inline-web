@@ -108,7 +108,8 @@ var C4 = {
 		this.boardEl = args.board || $("#c4board");
 		
 		$("#game-home-btn").click(function(){
-			C4.quit_game();
+			if (C4.gameId)
+				C4.quit_game();
 		});
 	},
 	padId : function(n)
@@ -139,7 +140,7 @@ var C4 = {
 			};
 			ws.onclose = function() {
 				// websocket was closed, try to reconnect in a bit.
-				C4.status("No connection to server");
+				$("#disconnected-warning").text("(Disconnected)");
 				C4.clear_seeks();
 				setTimeout(function(){C4.connect(url);}, 5000);
 			};
@@ -196,6 +197,7 @@ var C4 = {
 		if (welcome) {
 			C4.playerId = welcome[1];	
 			C4.debug("We are player "+C4.playerId);
+			$("#disconnected-warning").text("");
 			C4.remove_handler(C4.cb_welcome);
 			C4.add_handler(C4.cb_seek_notifications);
 			$.mobile.changePage($("#main"));
@@ -382,6 +384,7 @@ var C4 = {
 					C4.gameStatus("You have lost");
 					C4.remove_handler(in_game_handler);
 					C4.turn = "Y";
+					C4.gameId = null;
 					return true;
 				}
 				if (m = msg.match(re_other_no_moves)) {
