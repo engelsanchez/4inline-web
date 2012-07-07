@@ -209,7 +209,6 @@ var C4 = {
 			C4.remove_handler(C4.cb_welcome);
 			C4.add_handler(C4.cb_seek_notifications);
 			C4.add_handler(C4.cb_new_game);
-			$.mobile.changePage($("#main"));
 			return true;
 		} else
 			return false;
@@ -240,7 +239,11 @@ var C4 = {
 		if (m = msg.match(/^DUPLICATE_SEEK (\d+)$/)) {
 			return true;
 		}
-
+		
+		if (msg.match(/^NO_GAMES$/)){
+			$.mobile.changePage($("#main"));
+			return true;
+		}
 		return false;
 	},
 	quit_game : function() {
