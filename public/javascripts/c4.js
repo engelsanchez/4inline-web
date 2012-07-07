@@ -132,7 +132,10 @@ var C4 = {
 					C4.send("CONNECT AS "+C4.playerId);
 				else	
 					C4.send("CONNECT");
+				C4.handlers.splice(0, C4.handlers.length);
 				C4.add_handler(C4.cb_welcome);
+				// for testing disconnections, uncomment
+				//setTimeout(function(){C4.sock.close();}, 20000);
 			};
 			ws.onmessage = function (evt) {
 				var receivedMsg = evt.data;
@@ -142,15 +145,20 @@ var C4 = {
 				// websocket was closed, try to reconnect in a bit.
 				$("#disconnected-warning").text("(Disconnected)");
 				C4.clear_seeks();
+				C4.status("Disconnected");
+				C4.gameStatus("Disconnected");
+				C4.gameId = null;
 				setTimeout(function(){C4.connect(url);}, 5000);
 			};
 			ws.onerror = function(evt){
 				C4.status("Connection error : "+evt.data);
+				$("#disconnected-warning").text("(Disconnected)");
 			};
 			this.sock = ws;
 		} else {
 			// browser does not support websockets
 			C4.status("Sorry, your internet browser can not play this game :(");
+			$("#disconnected-warning").text("(Disconnected)");
 		}
 	},
 	status : function(msg) 
@@ -200,6 +208,7 @@ var C4 = {
 			$("#disconnected-warning").text("");
 			C4.remove_handler(C4.cb_welcome);
 			C4.add_handler(C4.cb_seek_notifications);
+			C4.add_handler(C4.cb_new_game);
 			$.mobile.changePage($("#main"));
 			return true;
 		} else
@@ -221,6 +230,17 @@ var C4 = {
 			C4.remove_seek(+m[1]);
 			return true;
 		} 
+		if (m = msg.match(/^SEEK_PENDING (\d+) C4 (STD|POP) (\d+)x(\d+)$/)){
+			var seek = {id:+m[1],variant:m[2],board_width:+m[3],board_height:+m[4]};
+			C4.add_my_seek(seek);
+			C4.debug("Waiting for another player");
+			return true;
+		}
+		
+		if (m = msg.match(/^DUPLICATE_SEEK (\d+)$/)) {
+			return true;
+		}
+
 		return false;
 	},
 	quit_game : function() {
@@ -235,7 +255,6 @@ var C4 = {
 		var cmd = "SEEK "+gType+" C4 "+gVar+" "+boardSize;
 		C4.debug(cmd);
 		C4.sock.send(cmd);
-		C4.add_handler(C4.cb_seek_reply);
 		C4.add_handler(C4.cb_new_game);
 		$.mobile.changePage($("#main"));
 		// TODO: Disable the seek button, re-enable on timeout
@@ -291,27 +310,8 @@ var C4 = {
 		$("#seeks-title").text("No seeks from others");
 		$("#my-seeks-title").text("No seeks from you");
 	},
-	cb_seek_reply : function(msg) {
-		var m = msg.match(/^SEEK_PENDING (\d+) C4 (STD|POP) (\d+)x(\d+)$/);
-		var matched = false;
-		if (m){
-			var seek = {id:+m[1],variant:m[2],board_width:+m[3],board_height:+m[4]};
-			C4.add_my_seek(seek);
-			C4.debug("Waiting for another player");
-			matched = true;
-		} else {
-			m = msg.match(/^DUPLICATE_SEEK (\d+)$/);
-			if (m) 
-				matched = true;
-		}
-		if (matched) {
-			C4.remove_handler(C4.cb_seek_reply);
-			return true;
-		} else
-			return false;
-	},
 	cb_new_game: function(msg) {
-		var newGame = msg.match(/^GAME (\d+) C4 (STD|POP) (\d+)x(\d+) (Y|O) (1|2) NEW$/);
+		var newGame = msg.match(/^GAME (\d+) C4 (STD|POP) (\d+)x(\d+) (Y|O) (1|2) (NEW|BOARD (.+))$/);
 		if (newGame) {
 			var gameId = newGame[1];
 			C4.gameId = C4.padId(gameId);
@@ -329,6 +329,19 @@ var C4 = {
 			C4.board = new C4Board({cols:w,rows:h,board:C4.boardEl});
 			C4.board.render();
 			C4.clear_seeks();
+			
+			var boardSpec = newGame[8];
+			if (boardSpec){
+				var rows = boardSpec.replace(/^{{|}}$/g,"").split(/},{/);
+				for(var r=1;r<=rows.length;++r){
+					var cols = rows[r-1].split(/,/);
+					for(var c=1;c<=cols.length;++c){
+						var piece = cols[c-1];
+						C4.board.setpiece(c, r, piece);
+						C4.board.updateCell(c,r);
+					}
+				}
+			}
 			
 			var re_other_dropped = new RegExp("^OTHER_PLAYED "+gameId+" DROP (\\d+)$");
 			var re_other_dropped_won = new RegExp("^OTHER_WON "+gameId+" DROP (\\d+)$");
@@ -402,7 +415,7 @@ var C4 = {
 					return true;
 				}
 				if (m = msg.match(re_other_disconnected)) {
-					C4.status("Waiting : Other disconnected");
+					C4.gameStatus("Other disconnected");
 					C4.otherConnected = false;
 					return true;
 				}
