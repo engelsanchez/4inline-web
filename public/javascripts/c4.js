@@ -450,13 +450,6 @@ var C4 = {
 					C4.gameId = null;
 					return true;
 				}
-				if (m = msg.match(re_other_no_moves)) {
-					var col = +m[1];
-					C4.board.drop(col,C4.otherColor);
-					C4.gameId = null;
-					C4.gameStatus("No more moves");
-					return true;
-				}
 				if (m = msg.match(re_other_quit)) {
 					C4.gameStatus("Other player quit");
 					C4.remove_handler(in_game_handler);
