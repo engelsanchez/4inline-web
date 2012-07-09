@@ -15,8 +15,16 @@
 			board : $("#c4holder"),
 			});
 		url = window.location.hostname + ":8080/websocket";
+		$(".hostname").text(window.location.hostname);
 		C4.connect(url);
-		$(".post-seek").click(function(){C4.seek("ANON")});
+		$(".post-seek").click(function(){
+			C4.seek("ANON");
+			$.mobile.changePage($("#main"));
+			});
+		$(".post-priv-seek").click(function(){
+			C4.seek("PRIV")
+			// TODO: Disable buttons on seek page, wait for response to seek pending.
+		});
 		$(window).bind("unload", function() {
 			C4.send("QUIT");
 		    return false; 
@@ -63,18 +71,19 @@
 				<input type="radio" name="game-variation" id="game-variation-2" value="POP"/>
 			</fieldset>
 			<button class="post-seek">Post</button>
-			<!--  <button class="post-priv-seek">Play with a Friend</button>  -->
+			<button class="post-priv-seek">Invite Friend</button>
 		</div>
 	</div>
 	<div data-role="page" id="friend-wait">
 		<div data-role="header">
-			<h1>4-in-line</h1>
+			<h1>Inviting Friend</h1>
 			<a href="#main" data-icon="home" data-iconpos="notext" data-direction="reverse">Home</a>
 		</div>
 		<div data-role="content">
-			<div class="c4status"></div>
-			<p>Email this link to a friend:</p>
-			<a data-role="button" target="_blank" href="mailto:?subject=Join a game of 4-in-line&amp;body=Click to join the game %0A%0Ahttp://tollygames.com">Email game link</a>
+			<a id="email-btn" data-role="button" target="_blank" href="mailto:?subject=Join a game of 4-in-line&amp;body=Click to join the game %0A%0Ahttp://tollygames.com">Email friend</a>
+			<p>Or send this URL to join this game:</p>
+			<p>http://<span class="hostname"></span>/?g=<span id="priv-game-id"></span></p>
+			
 			<button>Quit</button>
 		</div>
 	</div>
