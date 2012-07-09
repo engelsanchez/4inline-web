@@ -7,6 +7,12 @@
 	<link rel="stylesheet" href="http://code.jquery.com/mobile/1.1.0/jquery.mobile-1.1.0.min.css" />
 	<link rel="stylesheet" href="stylesheets/c4.css" />
 	<script src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
+	<script type="text/javascript">
+	$(document).bind("mobileinit", function(){
+			console.log("Changing default page transition");
+		  $.mobile.defaultPageTransition = 'slide';
+		});
+	</script>
 	<script src="http://code.jquery.com/mobile/1.1.0/jquery.mobile-1.1.0.min.js"></script> 
 	<script src="javascripts/c4.js"></script>
 	<script type="text/javascript">
@@ -25,6 +31,21 @@
 			C4.seek("PRIV")
 			// TODO: Disable buttons on seek page, wait for response to seek pending.
 		});
+		$("#cancel-priv-seek").click(function(){
+			if (C4.privSeekId){
+				C4.send("CANCEL_SEEK "+C4.privSeekId);
+			}
+		})
+		$("#friend-wait-home").click(function(event){
+			if (C4.privSeekId){
+				if (confirm("Quit game with friend?")){
+					C4.send("CANCEL_SEEK "+C4.privSeekId);
+				} else {
+					event.preventDefault();
+					return false;
+				}
+			}
+		})
 		$(window).bind("unload", function() {
 			C4.send("QUIT");
 		    return false; 
@@ -76,15 +97,14 @@
 	</div>
 	<div data-role="page" id="friend-wait">
 		<div data-role="header">
-			<h1>Inviting Friend</h1>
-			<a href="#main" data-icon="home" data-iconpos="notext" data-direction="reverse">Home</a>
+			<h1>Waiting for Friend</h1>
+			<a id="friend-wait-home" href="#main" data-icon="home" data-iconpos="notext" data-direction="reverse">Home</a>
 		</div>
 		<div data-role="content">
 			<a id="email-btn" data-role="button" target="_blank" href="mailto:?subject=Join a game of 4-in-line&amp;body=Click to join the game %0A%0Ahttp://tollygames.com">Email friend</a>
 			<p>Or send this URL to join this game:</p>
-			<p>http://<span class="hostname"></span>/?g=<span id="priv-game-id"></span></p>
-			
-			<button>Quit</button>
+			<p class="priv-game-url">http://<span class="hostname"></span>/?g=<span id="priv-game-id"></span></p>
+			<button id="cancel-priv-seek">Cancel</button>
 		</div>
 	</div>
 
@@ -92,7 +112,7 @@
 		<div data-role="header">
 			<h1>
 			<span id="gameStatus"></span>
-			<span class="you-are">You are <img src="images/piece0_small.png" alt="No color"/></span>
+			<span class="you-are">You <img src="images/piece0_small.png" alt="No color"/></span>
 			</h1>
 			<a id="game-home-btn" href="#main" data-icon="home" data-iconpos="notext" 
 				data-direction="reverse">Home</a>

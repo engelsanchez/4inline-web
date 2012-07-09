@@ -88,6 +88,8 @@ var C4 = {
 	sock : null,
 	// ID given to us by the server to use when reconnecting.
 	playerId : null,
+	// Set after clicking invite friend while waiting for friend.
+	privSeekId : null,
 	privGameId : null,
 	// Msg handler list.
 	handlers : [],
@@ -258,6 +260,8 @@ var C4 = {
 					"&body=Click to join the game %0A%0A" +
 					"http://"+window.location.hostname+"/?g="+seek.id);
 			$("#priv-game-id").text(seek.id);
+			C4.privSeekId = C4.padId(seek.id);
+			C4.clear_seeks();
 			C4.debug("Waiting for another player");
 			$.mobile.changePage($("#friend-wait"));
 			return true;
@@ -271,6 +275,10 @@ var C4 = {
 			C4.debug(msg);
 			var seekId = +m[1];
 			C4.remove_my_seek(seekId);
+			if (C4.privSeekId && (+C4.privSeekId === seekId)){
+				C4.privSeekId = null;
+				$.mobile.changePage($("#main"));
+			}
 			return true;
 		}
 		
@@ -359,7 +367,7 @@ var C4 = {
 			C4.color = +newGame[6];
 			C4.otherColor = 3-C4.color;
 			C4.otherConnected = true;
-			$(".you-are img").attr({src: "images/piece"+C4.color+"_small.png"});
+			$(".you-are img").attr({src: "images/piece"+C4.color+"_small.png", alt: "You are color "+C4.color});
 			
 			C4.board = new C4Board({cols:w,rows:h,board:C4.boardEl});
 			C4.board.render();

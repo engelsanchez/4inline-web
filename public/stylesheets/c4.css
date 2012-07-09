@@ -1,5 +1,4 @@
 .ui-header .ui-title, .ui-footer .ui-title {
-
 margin-left: 0;
 margin-right: 0;
 text-overflow:visible
@@ -7,6 +6,8 @@ text-overflow:visible
 
 .you-are {float:right; margin:0 5px}
 .you-are img {width:26px; height: 26px;vertical-align:bottom}
+
+.priv-game-url{text-align:center}
 
 /* Default style for the board */
 .c4area {width:520px; margin: 0 auto}
